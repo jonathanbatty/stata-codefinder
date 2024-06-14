@@ -17,7 +17,7 @@ This repository contains the code required to install Codefinder, a package that
 The package can be installed from GitHub using `net install`:
 
 ```
-net install nmf, from("https://raw.githubusercontent.com/jonathanbatty/stata-codefinder/main/installation/") replace
+net install codefinder, from("https://raw.githubusercontent.com/jonathanbatty/stata-codefinder/main/installation/") replace
 
 ```
 
