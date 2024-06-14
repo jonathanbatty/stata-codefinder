@@ -23,8 +23,10 @@ mata: asarray_notfound(codedef, "")
 foreach codefile of local codefiles {
 	
 	// Strip .txt suffix of each file name to specify variable name
-	// Below regex handles if codefile is "file.txt" or "C:\dir\file.txt"
-	if regexm("`codefile'", "[^\\]+(?=\.txt$)") local varname = regexs(0)
+	local varname : subinstr local codefile ".txt" ""
+	if (strrpos("`varname'", "\") > 0) {
+		local varname = substr("`varname'", strrpos("`varname'", "\") + 1, .)
+	}
 	
 	// Load the code-variable relationships from each text file into the associative array
 	mata: cf_load("`codefile'", "`varname'", codedef)
