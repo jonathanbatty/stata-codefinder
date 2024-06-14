@@ -10,58 +10,76 @@
 {title:Title}
 
 {phang}
-{bf:nmf} {hline 2} matrix decomposition using non-negative matrix factorization (NMF).
+{bf:codefinder} {hline 2} efficient matching of strings to one of more of those contained within text file(s).
 
 
 {marker syntax}{...}
 {title:Syntax}
 
-Perform many-to-many string (code) matching using strings stored in .txt files.
+Perform many-to-many (code) matching using strings stored in .txt files.
 
 {p 8 17 2}
 {cmdab:codefinder}
-[{varstosearch}]
-{cmd:,} {bf: k(#)} [{it:options}]
+[{varlist}]
+{cmd:,} {bf: dataset(string) codefiles(string) id(string)} [{it:options}]
 
 {synoptset 20 tabbed}{...}
 {synopthdr}
 {synoptline}
 {syntab:Main}
-{p2coldent:* {opt k(#)}}specifes the rank, {bf: k}, of the factorisation.{p_end}
-{synopt:{opt epoch(#)}}maximum number of iterations over which to minimise the error function.{p_end}
-{synopt:{opt initial(string)}}declares the matrix initialisation method.{p_end}
-{synopt:{opt loss(string)}}declares the loss function used to calculate {c |}{c |}A - WH{c |}{c |}.{p_end}
-{synopt:{opt stop(#)}}declares the early stopping delta threshold for convergence.{p_end}
-{synopt:{opt nograph}}suppress graph of epoch vs. loss function.{p_end}
+{p2coldent:* {opt dataset(string)}}specifes the path to the dataset on which to perform code searching.{p_end}
+{p2coldent:* {opt codefiles(string)}}specifies the path(s) to one or more text files containing codes.{p_end}
+{p2coldent:* {opt id(string)}}specifies a variable that contains a unique string identifier.{p_end}
+{synopt:{opt n_cores(#)}}declares the number of CPU cores with which to perform code searching.{p_end}
+{synopt:{opt summary}}prints a summary of the variables created during the codefinding procedure.{p_end}
 {synoptline}
 {p2colreset}{...}
 {p 4 6 2}
-* {opt k(#)} is required.
+* {opt dataset()}, {opt codefiles()} and {opt id()} are required. It is strongly recommended to specify {opt n_cores()}.
 
 {p 4 6 2}
-{cmd:by} is not allowed. {cmd:fweight}s are not allowed.
+{cmd:if}, {cmd:in}, {cmd:by} and {cmd:fweight}s are not allowed.
 
+{p 4 6 2}
+{bf: Note: codefinder} should be used with no data loaded into Stata memory.
 
 {marker description}{...}
 {title:Description}
 
 {pstd}
-The aim of {cmd:nmf} is to decompose matrix A into a lower-rank matrix approximation such that 
-X ≈ WH, where A, W and H are made up of non-negative, real numbers. Missing values are 
-permitted. If X is an n x m matrix, the dimensions of W and H will be n x k and k x m, 
-respectively, whereby k represents the rank of the decomposition. In many cases, a good 
-approximatation for A may be achieved with k << rank(A). 
+The increasing availability of population-scale, routinely collected healthcare data creates 
+significant opportunities to better understand how to improve the delivery of healthcare, but 
+also poses major analytic challenges. Frequently, medical diagnoses, medications and procedures
+are encoded in these datasets using one or more coding systems, such as: (i) ICD (version 8, 9, 10 
+or 11; international or country-specific implementations), (ii) SNOMED-CT, (iii) Read, (iv) DM&D;
+(v) gemscript, (vi) BNF codes, etc. These datasets may include such codes in a number of different 
+structures, including both long (one code per row) and wide (multiple codes per row; e.g. dx_1, dx_2, 
+... , dx_n) format. The long format is more common when handling hospitalisation data (where each
+row represents an admission or hospital episode, in which multiple diagnoses may be made, and during 
+which multiple procedures may occur).
 
 {pstd}
-NMF is a NP-hard problem. As such, multiplicative updates of matrices W and H are iteratively  
-performed in order to minimise the generalized error function, {c |}{c |}A - WH{c |}{c |}. This 
-implements the methods first reported by Paatero and Tapper[1] and later popularised by Lee and 
-Seung[2, 3].
+While some of these encoding systems are hierarchical, extensive string matching is often required 
+to translate these coding systems into meaningful clinical concepts. For example, in the ICD-10 
+system, a myocardial infarction (MI; heart attack) can be represented by the following codes: I21.0,
+I21.1, I21.2, I21.3, I22.4, I21.9, I22.0, I22.1, I22.8, I22.9 and I25.2. In other code systems, MI
+is represented by several dozen codes with no clear hierarchy. Including long lists of such codes
+in .do files is cumbersome and can make updating the analysis problematic if codelists change.
 
 {pstd}
-Running NMF results in the generation of three new frames, {bf:W}, {bf:H} and {bf:error} that 
-store the basis and coefficient matrices and a summary of the error over each epoch, respectively.
-These can be accessed using:{cmd: frame change W}, {cmd: frame change H} and {cmd: frame change error}.
+{bf:codefinder} allows the user to provide a list of codes in a text file (e.g. myocardial_infarction.txt)
+that are loaded into Stata. The presence of one or more of these codes in one or more variable (e.g. dx_1, 
+dx_2, ... , dx_n) is used to assign a new variable, myocardial_infarction, either 0 or 1. {bf:codefinder} 
+returns a Stata dataset containing the original row ID and each new variable. These can be merged with the
+original dataset (using: merge 1:1 {it:id} using "filename.dta") if required.
+
+{pstd}
+{bf:codefinder} uses optimised Mata functionality (associative arrays) and multiprocessing to search
+for codes as efficiently as possible. The use of multiple CPU cores will produce meaningful
+improvements in runtime as: (i) the datset size (number of rows), (ii) the number of code-containing 
+variables (dx_n), (iii) the number of text files, and (iv) the number of codes in each text files 
+increases. Some experimentation may be required to identify the optimum number of CPU cores for a given
+use case (also see below). 
 
 
 {marker options}{...}
@@ -70,86 +88,57 @@ These can be accessed using:{cmd: frame change W}, {cmd: frame change H} and {cm
 {dlgtab:Main}
 
 {phang}
-{opt k(#)} is required and specifies the rank for the decomposition. The value of k must be greater 
-than or equal to 2, and must be less than the minimum of the number of columns and rows of the initial 
-matrix to be factorised.
+{opt dataset(string)} is required and specifies path to the dataset on which to perform code searching. Any
+data must be cleared from stata prior to running {bf:codefinder} (e.g. using {stata clear:clear}).
+
+{phang}
+{opt codefiles(string)} is required and specifies the path to each text file containing codes. The name of 
+each text file will form the variable name that stores the results of searching for the codes contained in 
+that file.
+
+{phang}
+{opt id(string)} is required and specifies a unique identifier for each row of the data. This will be 
+required when merging the results of the codefinding procedure with the original data.
 
 {dlgtab:Options}
 
+{marker n_cores()}{...}
 {phang}
-{opt epoch(#)} sets the maximum number of epochs (iterations) over which the decomposition is optimized. 
-If this is not specified, NMF runs for 200 epochs by default. If convergence has not been reached by the
-number of epochs specified in epoch() (or by 200 epochs, if no value is specified), an error message will
-advise that a greater number of epochs should be used.
+{opt n_cores(#)}
+indicates how many CPU cores should be used for finding codes. It is recommended that n_cores should be set 
+to be lower than the number of available CPU cores available to the machine that you are using. 
+The number of available CPU cores available can be checked by running: 
 
-{marker initial()}{...}
+{phang3}
+{stata display c(processors): display c(processors)}
+
+{phang2}
+The maximum number of CPU cores is not limited by the license of the version of Stata being used (e.g. IC/MP etc.).
+
+{marker summary}{...}
 {phang}
-{opt initial(option)}
-indicates how matrices {it: W} and {it: H} are initialized.  The available {it:option}s are:
-
-{phang2}
-{opt randomu},
-the default, specifies that W and H are initialised by sampling values from a {bf:uniform} distribution, in the range [min(A), max(A)].
-
-{phang2}
-{opt randomn},
-specifies that W and H are initialised by sampling values from a {bf:normal} distribution, in the range [1, 2].
-
-{phang2}
-{opt nndsvd},
-specifies that W and H are initialised using non-negative double singular value decomposition (NNDSVD)[4]. This is deterministic (non-random) and was designed
-to ehance the initialisation stage of NMF. 
-
-{phang2}
-{opt nndsvda},
-specifies that W and H are initialised using NNDSVD, in which zeroes are filled with the average of A. It is suggested that this may be better when sparsity is not desired.
-
-{phang2}
-{opt nndsvdar},
-specifies that W and H are initialised using NNDSVD, in which zeroes are filled with small random values.
-
-{marker loss()}{...}
-{phang}
-{opt loss(option)}
-indicates the loss function that will be minimised during the matrix decomposition. This is the error function for {c |}{c |}A - WH{c |}{c |}. 
-Options include: eu, is and kl. Note that the Itakura-Saito divergence (is) requires no missing data to be present in A.
-
-{phang2}
-{opt eu},
-the default, specifies the Frobenius (Euclidean) distance. This may be preferred when matrix A contains continous data.
-
-{phang2}
-{opt kl},
-specifies specifies the generalized Kullback-Leibler divergence. This may be preferred when matrix A contains binary or count data.
-
-{phang2}
-{opt is},
-specifies the Itakura-Saito divergence.
-
-{marker stop()}{...}
-{phang}
-{opt stop(#)}
-sets the early stopping threshold for convergence; if {cmd: stop(0)} is set, optimisation will continue for the set number of epochs without early stopping. 
-If ((previous error - current error) / error at initiation) < stop tolerance, convergence has occured and nmf terminates. 
-The default value is 1.0e-4.
-
-{marker nograph}{...}
-{phang}
-{opt nograph}
-suppresses plotting of a line graph to depict the loss function decreasing with each successive epoch.
+{opt summary}
+indicates that codefinder should print a summary of how many observations contained one or more of the codes contained
+within each text file, on completion of codefinding.
 
 {marker remarks}{...}
 {title:Remarks}
 
 {pstd}
-A number of demonstration .do files are available, complete with sample data. These are metagenes.do, imputation.do, faces.do and trajectories.do and can be found at: https://github.com/jonathanbatty/stata-nmf/tree/main/examples
+A summary of benchmarks for {bf:codefinder} are available at: https://github.com/jonathanbatty/stata-codefinder
 
 {marker examples}{...}
 {title:Examples}
 
-{phang}{cmd:. nmf p*, k(5) epoch(100)}{p_end}
+{pstd}
+{it: Example 1:}{break}
+codefinder dx_*, dataset("..\data\dataset.dta") codefiles("MI.txt HTN.txt DM.txt") id(unique_id) n_cores(4) summary
 
-{phang}{cmd:. nmf k*,	k(15) epoch(100) initial(randomu) stop(1.0e-4) loss(kl) nograph	}{p_end}
+{pstd}
+{it: Example 2:}{break}
+local code_files MI.txt HTN.txt DM.txt OBS.txt DYS.txt ETH.txt{break}
+local data "..\data\dataset.dta"
+codefinder dx_*, dataset("`data'") codefiles("`code_files'") id(unique_id) n_cores(16)
 
 {marker acknowledgements}{...}
 {title:Acknowledgements}
@@ -161,4 +150,9 @@ Jonathan Batty received funding from the Wellcome Trust 4ward North Clinical Res
 {title:Suggested citation}
 
 {pstd}
-Batty, J. A. (2024). Stata package ``codefinder'': an implementation of efficient many-to-many string matching in Stata (Version 1.0) [Computer software]. https://github.com/jonathanbatty/stata-codefinder
+Batty, JA. (2024). Stata package ``codefinder'': an implementation of efficient many-to-many string matching in 
+Stata (Version 1.0) [Computer software]. https://github.com/jonathanbatty/stata-codefinder
+
+
+{pstd}
+ 
