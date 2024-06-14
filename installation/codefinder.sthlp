@@ -125,6 +125,9 @@ within each text file, on completion of codefinding.
 {title:Remarks}
 
 {pstd}
+{bf:Note:} The names of the text files containing the search strings must not contain spaces, numbers or special characters.
+
+{pstd}
 A summary of benchmarks for {bf:codefinder} are available at: https://github.com/jonathanbatty/stata-codefinder
 
 {marker examples}{...}
