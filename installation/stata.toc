@@ -1,0 +1,8 @@
+v 1.00
+d codefinder: A Stata package to perform efficient many-to-many string matching.
+d Distribution date: 14 Jun 2024
+d 
+d Jonathan A. Batty, LIDA, University of Leeds
+d J.Batty@leeds.ac.uk
+d 
+p codefinder A package to perform efficient many-to-many string matching

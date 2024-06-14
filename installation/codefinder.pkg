@@ -1,0 +1,26 @@
+v 1.00
+d {bf:codefinder}: A Stata package to perform efficient many-to-many string matching.
+d
+d Requires: Stata version 17 or higher.
+d
+d KW: Stata
+d KW: string matching
+d KW: routinely collected health data
+d KW: icd
+d KW: snomed
+d KW: read
+d
+d Distribution date: 14 Jun 2024
+d
+d This  version: 14 Jun 2024
+d First version: 14 Jun 2024
+
+d License: MIT
+d
+d Author: Jonathan Batty (J.Batty@leeds.ac.uk)
+d
+f codefinder.ado
+f codefinder.mata
+f worker.do
+f findcodes.ado
+f codefinder.sthlp
