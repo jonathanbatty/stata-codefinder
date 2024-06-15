@@ -11,7 +11,7 @@ void cf_load(string scalar codefile,
 	string colvector codevector
 	string rowvector newvalue
 	string scalar oldvalue
-	real scalar i
+	real scalar i, n
 	
 	// Load codes from file
 	codevector = cat(codefile)
@@ -19,7 +19,8 @@ void cf_load(string scalar codefile,
 	
 	// Populate codedefinitions asarray with keys and values
 	// Key: code, value: variable name(s) in rowvector
-	for (i = 1; i <= rows(codevector); i++) {
+	n = rows(codevector)
+	for (i = 1; i <= n; i++) {
 		
 		// Check if key already exists in the asarray
 		if (asarray(codedef, codevector[i]) == "") {
@@ -47,7 +48,7 @@ void cf_find(string scalar varname,
 	string colvector tosearch
 	real colvector searchresults
 	string rowvector vars, result
-	real scalar i, j
+	real scalar i, j, n
 	transmorphic scalar resindex
 	
 	// Tokenize result variables (to hold outputs of search)
@@ -58,31 +59,20 @@ void cf_find(string scalar varname,
 	
 	// Map each variable name to the view column id
 	resindex = asarray_create()
-	for (i = 1; i <= cols(vars); i++) {
+	n = cols(vars)
+	for (i = 1; i <= n; i++) {
 		asarray(resindex, vars[i], i)
 	}
-	
-	// DEBUG: show key-value pairs of resindex
-	// e.g. key = "MI", value = "1" (index of view column)
-	//cols = asarray_keys(resindex)
-	//for (i = 1; i <= rows(cols); i++) {
-	//	cols[i]
-	//	asarray(resindex, cols[i])
-	//}
-	
+		
 	// Create a view of the vector to be searched (strings)
 	st_sview(tosearch = J(0, 0, .), ., varname, touse)
-	
-	// DEBUG: print name of variable and number of items to search
-	// varname
-	// rows(tosearch)
 	
 	// Search over the search vector using the associative array; replace value
 	// in relevant result column if a match is found.
 	// Use of a for loop enables assignment of multiple conditions for a single 
 	// code.
-	
-	for (i = 1; i <= rows(tosearch); i++) { 
+	n = rows(tosearch)
+	for (i = 1; i <= n; i++) { 
 		result = asarray(codedef, tosearch[i])
 		if (result != "") {
 			for (j = 1; j <= rows(result); j++) {

@@ -60,6 +60,12 @@ program define codefinder
 		local final_row_`i' = min(`first_row_`i'' + `chunksize' - 1, `numrows')
 	}
 	
+	// Import mata functions and compile these to a local .mo file (which the 
+	// workers can then directly access)
+	do "codefinder.mata"
+	mata: mata mosave cf_load(), replace
+	mata: mata mosave cf_find(), replace
+	
 	// Divide input file into n temporary subfiles based on number of rows and 
 	// number of cores to use.
 	noisily display "Running codefinder using " `n_cores' " cores..."
@@ -76,7 +82,7 @@ program define codefinder
 	while (`jobscomplete' != 1) {
 		
 		// Poll for completion
-		sleep 500
+		sleep 250
 				
 		// When all jobs are finished, exit loop (pausing to allow residual file writing)
 		capture confirm file "temp/run_complete.dta"
@@ -99,6 +105,10 @@ program define codefinder
 	// Delete temporary directory at completion of code
 	shell rd "temp" /s /q
 	shell rd "logs" /s /q
+	
+	// Delete compiled mata code
+	erase "cf_load.mo"
+	erase "cf_find.mo"
 	
 	// Print summary of codefinding if user specifies this
 	if "`summary'" == "summary" {
