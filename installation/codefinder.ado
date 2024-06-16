@@ -62,7 +62,7 @@ program define codefinder
 	
 	// Import mata functions and compile these to a local .mo file (which the 
 	// workers can then directly access)
-	findfile "codefinder.mata"
+	quietly findfile "codefinder.mata"
 	run "`r(fn)'"
 	quietly mata: mata mosave cf_load(), replace
 	quietly mata: mata mosave cf_find(), replace
