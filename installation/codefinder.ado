@@ -72,8 +72,10 @@ program define codefinder
 	noisily display "Running codefinder using " `n_cores' " cores..."
 	
 	// Create a new stata process for each chunk; pass necessary arguments
+	quietly findfile "cf_worker.do"
+	local worker = "`r(fn)'"
 	forvalues i = 1 / `n_cores' {		
-		winexec `statadir' /e /q /i do "worker.do" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
+		winexec `statadir' /e /q /i do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
 	}
 	
 	// Initialise local to store job completion status
