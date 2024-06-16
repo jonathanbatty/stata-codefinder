@@ -1,6 +1,6 @@
 ![Codefinder](assets/package.png?raw=true "Codefinder")
 
-![StataMin](https://img.shields.io/badge/stata-18-blue) ![issues](https://img.shields.io/github/issues/jonathanbatty/stata-codefinder) ![license](https://img.shields.io/github/license/jonathanbatty/stata-codefinder/) ![version](https://img.shields.io/github/v/release/jonathanbatty/stata-codefinder) ![release](https://img.shields.io/github/release-date/jonathanbatty/stata-codefinder) ![Stars](https://img.shields.io/github/stars/jonathanbatty/stata-codefinder) 
+![StataMin](https://img.shields.io/badge/stata-18-blue) ![issues](https://img.shields.io/github/issues/jonathanbatty/stata-codefinder) ![license](https://img.shields.io/github/license/jonathanbatty/stata-codefinder) ![version](https://img.shields.io/github/v/release/jonathanbatty/stata-codefinder) ![release](https://img.shields.io/github/release-date/jonathanbatty/stata-codefinder) ![Stars](https://img.shields.io/github/stars/jonathanbatty/stata-codefinder) 
 
 ---
 
