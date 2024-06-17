@@ -57,6 +57,7 @@ Please [open an issue](https://github.com/jonathanbatty/stata-codefinder/issues)
 
 
 ## Roadmap
+- Enable use on Mac / Linux machines.
 - Improvements in error reporting functionality: workers to flag errors to main Stata instance, which should handle these appropriately.
 - Further incremental improvements to speed and stability.
 
