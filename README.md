@@ -11,7 +11,7 @@
 # Codefinder for Stata
 (v1.00, 14 Jun 2024)
 
-This repository contains the code required to install and run `codefinder`, a package that uses multiprocessing, associative arrays and optimised Mata functions to speed up many-to-many string matching in Stata. This can be used to identify the presence of lists of codes (e.g. ICD, SNOMED-CT, Read, Emis, etc) in variables containing data in string format. At present, `codefinder` can only be used on Windows.
+This repository contains the code required to install and run `codefinder`, a package that uses multiprocessing, associative arrays and optimised Mata functions to speed up many-to-many string matching in Stata. This can be used to identify the presence of lists of codes (e.g. ICD, SNOMED-CT, Read, Emis, etc) in variables containing data in string format. At present, `codefinder` has only been tested on Windows (10 and 11).
 
 ## Installation
 The package can be installed from GitHub using `net install`:
@@ -57,7 +57,7 @@ Please [open an issue](https://github.com/jonathanbatty/stata-codefinder/issues)
 
 
 ## Roadmap
-- Enable use on Mac / Linux machines.
+- Test on Windows / Mac machines.
 - Improvements in error reporting functionality: workers to flag errors to main Stata instance, which should handle these appropriately.
 - Further incremental improvements to speed and stability.
 
