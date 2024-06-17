@@ -48,6 +48,9 @@ Examples of running codefinder using a simulated, synthetic dataset is provided 
 Please [open an issue](https://github.com/jonathanbatty/stata-codefinder/issues) to report errors, suggest feature enhancements, and/or make any other requests. 
 
 ## Change Log
+**v1.01 (16/06/24)**
+ - Minor bug fixes: installation now works with a single command.
+
 **v1.00 (14/06/24)**
  - Initial release.
    
