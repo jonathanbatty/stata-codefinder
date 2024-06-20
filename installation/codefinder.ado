@@ -126,25 +126,27 @@ program define codefinder
 		mata: codedef = asarray_create()
 		mata: asarray_notfound(codedef, "")
 
-// 		// Strip .txt suffix from file names and use the remainder as the variable name
-// 		local resultvars = ""
-// 		foreach codefile of local codefiles {
-//			
-// 			// Strip .txt suffix of each file name to specify variable name
-// 			local varname : subinstr local codefile ".txt" ""
-// 			if (strrpos("`varname'", "\") > 0) {
-// 				local varname = substr("`varname'", strrpos("`varname'", "\") + 1, .)
-// 			}
-//			
-// 			// Load the code-variable relationships from each text file into the associative array
-// 			mata: cf_load("`codefile'", "`varname'", codedef)
-//			
-// 			// Generate placeholder variables for each code file
-// 			generate byte `varname' = 0
-//			
-// 			// Append varname to resultvars
-// 			local resultvars = "`resultvars' `varname'"
-// 		}
+		// Strip .txt suffix from file names and use the remainder as the variable name
+		local resultvars = ""
+		foreach codefile of local codefiles {
+			
+			// Strip .txt suffix of each file name to specify variable name
+			local varname : subinstr local codefile ".txt" ""
+			if (strrpos("`varname'", "\") > 0) {
+				local varname = substr("`varname'", strrpos("`varname'", "\") + 1, .)
+			}
+			
+			// Load the code-variable relationships from each text file into the associative array
+			mata: cf_load("`codefile'", "`varname'", codedef)
+			
+			// Generate placeholder variables for each code file
+			generate byte `varname' = 0
+			
+			// Append varname to resultvars
+			local resultvars = "`resultvars' `varname'"
+		}
+		
+		di "`resultvars'"
 
 // 		// Program to execute search function on nonmissing rows of data for each variable
 // 		capture program drop findcodes
