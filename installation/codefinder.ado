@@ -27,6 +27,39 @@ program define codefinder
 		error 498
 	}
 	
+	// Get path to Stata
+	local executable : dir "`c(sysdir_stata)'" files "Stata*-*.exe", respect
+	foreach exe in `executable' {
+		if strpos("`exe'", "old") == 0 {
+			local currentstata_exe `exe'
+		} 
+	}	
+	if (`"`statadir'"' == "") {
+		local statadir `"`c(sysdir_stata)'`currentstata_exe'"'
+	}
+	capture confirm file `"`c(sysdir_stata)'`currentstata_exe'"'
+	if (_rc != 0) {
+		noisily display as error "Automated method to detect Stata directory failed."
+		error 498
+	}
+	
+	// Create temporary storage to hold result files
+	capture mkdir temp
+	capture mkdir logs
+	
+	// Create local variables for calulcations below
+	quietly describe using "`dataset'"
+	local numrows = `r(N)'
+	local chunksize = ceil(`numrows' / `n_cores')
+	
+	// Generate local values for first and last row
+	forvalues i = 1 / `n_cores' {
+		
+		// Calculate first and last rows to be included in each chunk
+		local first_row_`i' = (`i' - 1) * `chunksize' + 1
+		local final_row_`i' = min(`first_row_`i'' + `chunksize' - 1, `numrows')
+	}
+	
 	// Import mata functions and compile these to a local .mo file (which the 
 	// workers can then directly access)
 	quietly findfile "codefinder.mata"
@@ -34,140 +67,47 @@ program define codefinder
 	quietly mata: mata mosave cf_load(), replace
 	quietly mata: mata mosave cf_find(), replace
 	
-	// Check if multiprocessing is to be used
-	if (`n_cores' > 1) {
+	// Divide input file into n temporary subfiles based on number of rows and 
+	// number of cores to use.
+	noisily display "Running codefinder using " `n_cores' " cores..."
+	
+	// Create a new stata process for each chunk; pass necessary arguments
+	quietly findfile "cf_worker.ado"
+	local worker = "`r(fn)'"
+	forvalues i = 1 / `n_cores' {		
+		winexec `statadir' /e /q /i do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
+	}
+	
+	// Initialise local to store job completion status
+	local jobscomplete = 0
+	
+	// Poll file completion log for full job completion every n = 10 seconds
+	while (`jobscomplete' != 1) {
 		
-		// Get path to Stata
-		local executable : dir "`c(sysdir_stata)'" files "Stata*-*.exe", respect
-		foreach exe in `executable' {
-			if strpos("`exe'", "old") == 0 {
-				local currentstata_exe `exe'
-			} 
-		}	
-		if (`"`statadir'"' == "") {
-			local statadir `"`c(sysdir_stata)'`currentstata_exe'"'
-		}
-		capture confirm file `"`c(sysdir_stata)'`currentstata_exe'"'
-		if (_rc != 0) {
-			noisily display as error "Automated method to detect Stata directory failed."
-			error 498
-		}
-		
-		// Create temporary storage to hold result files
-		capture mkdir temp
-		capture mkdir logs
-		
-		// Create local variables for calulcations below
-		quietly describe using "`dataset'"
-		local numrows = `r(N)'
-		local chunksize = ceil(`numrows' / `n_cores')
-		
-		// Generate local values for first and last row
-		forvalues i = 1 / `n_cores' {
-			
-			// Calculate first and last rows to be included in each chunk
-			local first_row_`i' = (`i' - 1) * `chunksize' + 1
-			local final_row_`i' = min(`first_row_`i'' + `chunksize' - 1, `numrows')
-		}
-		
-		// Divide input file into n temporary subfiles based on number of rows and 
-		// number of cores to use.
-		noisily display "Running codefinder using " `n_cores' " cores..."
-		
-		// Create a new stata process for each chunk; pass necessary arguments
-		quietly findfile "cf_worker.ado"
-		local worker = "`r(fn)'"
-		forvalues i = 1 / `n_cores' {		
-			winexec `statadir' /e /q /i do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
-		}
-		
-		// Initialise local to store job completion status
-		local jobscomplete = 0
-		
-		// Poll file completion log for full job completion every n = 10 seconds
-		while (`jobscomplete' != 1) {
-			
-			// Poll for completion
-			sleep 250
-					
-			// When all jobs are finished, exit loop (pausing to allow residual file writing)
-			capture confirm file "temp/run_complete.dta"
-			if (_rc == 0) {
-				local jobscomplete = 1
-			}
-		}
+		// Poll for completion
+		sleep 250
 				
-		// Append results files together
-		if (`n_cores' == 1) {
-			use "temp\chunk_1_results.dta", clear
+		// When all jobs are finished, exit loop (pausing to allow residual file writing)
+		capture confirm file "temp/run_complete.dta"
+		if (_rc == 0) {
+			local jobscomplete = 1
 		}
-		else {
-			local chunks : dir temp files "chunk_*_results.dta"
-			quietly cd temp
-			append using `chunks'
-			quietly cd ../
-		}
-		
-		// Delete temporary directory at completion of code
-		shell rd "temp" /s /q
-		shell rd "logs" /s /q
-				
+	}
+			
+	// Append results files together
+	if (`n_cores' == 1) {
+		use "temp\chunk_1_results.dta", clear
 	}
 	else {
-		
-		// Set mata properties to favour speed
-		mata: mata set matafavor speed
-		mata: mata set matamofirst on
-		
-		// Load the source data
-		use `id' `searchvars' using `dataset'
-		
-		// Create empty mata associative array to populate with codes and declare
-		// what is returned when the queried key does not exist
-		mata: codedef = asarray_create()
-		mata: asarray_notfound(codedef, "")
-		
-		// Strip .txt suffix from file names and use the remainder as the variable name
-		local resultvars = ""
-		foreach codefile of local codefiles {
-			
-			// Strip .txt suffix of each file name to specify variable name
-			local varname : subinstr local codefile ".txt" ""
-			if (strrpos("`varname'", "\") > 0) {
-				local varname = substr("`varname'", strrpos("`varname'", "\") + 1, .)
-			}
-			
-			// Load the code-variable relationships from each text file into the associative array
-			mata: cf_load("`codefile'", "`varname'", codedef)
-			
-			// Generate placeholder variables for each code file
-			generate byte `varname' = 0
-			
-			// Append varname to resultvars
-			local resultvars = "`resultvars' `varname'"
-		}
-
-		// Program to execute search function on nonmissing rows of data for each variable
-		capture program drop findcodes
-		program define findcodes
-			args variable resultvars codedef
-			
-			// Mark observations that are nonmissing
-			marksample touse, strok
-			markout `touse' `variable', strok
-			
-			// Find conditions
-			mata: cf_find("`variable'", "`touse'", "`resultvars'", codedef)
-		end
-
-		// Loop over each variable
-		foreach var of varlist `searchvars' {
-			findcodes `var' "`resultvars'" codedef
-		}
-
-		// Keep only ID and result variables; save dataset
-		keep `id' `resultvars'
+		local chunks : dir temp files "chunk_*_results.dta"
+		quietly cd temp
+		append using `chunks'
+		quietly cd ../
 	}
+	
+	// Delete temporary directory at completion of code
+	shell rd "temp" /s /q
+	shell rd "logs" /s /q
 	
 	// Delete compiled mata code
 	erase "cf_load.mo"
