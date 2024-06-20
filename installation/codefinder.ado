@@ -12,6 +12,10 @@ program define codefinder
 	// Set niceness = 10 to free up memory immediately
 	quietly set niceness 10
 	
+	// Set mata properties to favour speed
+	mata: mata set matafavor speed
+	mata: mata set matamofirst on
+	
 	// Check no data is presently loaded into Stata
 	capture assert _N == 0
 	if _rc != 0 {
@@ -113,9 +117,57 @@ program define codefinder
 				
 	} // End of multiprocessing
 	else {
-		di "Single core mode"
 		
-	}
+		// Load data chunk
+		use `id' `searchvars' using `dataset'
+
+		// Create empty mata associative array to populate with codes and declare
+		// what is returned when the queried key does not exist
+		mata: codedef = asarray_create()
+		mata: asarray_notfound(codedef, "")
+
+		// Strip .txt suffix from file names and use the remainder as the variable name
+		local resultvars = ""
+		foreach codefile of local codefiles {
+			
+			// Strip .txt suffix of each file name to specify variable name
+			local varname : subinstr local codefile ".txt" ""
+			if (strrpos("`varname'", "\") > 0) {
+				local varname = substr("`varname'", strrpos("`varname'", "\") + 1, .)
+			}
+			
+			// Load the code-variable relationships from each text file into the associative array
+			mata: cf_load("`codefile'", "`varname'", codedef)
+			
+			// Generate placeholder variables for each code file
+			generate byte `varname' = 0
+			
+			// Append varname to resultvars
+			local resultvars = "`resultvars' `varname'"
+		}
+
+		// Program to execute search function on nonmissing rows of data for each variable
+		capture program drop findcodes
+		program define findcodes
+			args variable resultvars codedef
+			
+			// Mark observations that are nonmissing
+			marksample touse, strok
+			markout `touse' `variable', strok
+			
+			// Find conditions
+			mata: cf_find("`variable'", "`touse'", "`resultvars'", codedef)
+		end
+
+		// Loop over each variable
+		foreach var of varlist `searchvars' {
+			findcodes `var' "`resultvars'" codedef
+		}
+
+		// Keep only ID and result variables; save dataset
+		keep `id' `resultvars'
+		
+	} // End of single core processing
 	
 	// Delete compiled mata code files
 	erase "cf_load.mo"
