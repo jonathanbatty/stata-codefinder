@@ -33,83 +33,91 @@ program define codefinder
 	run "`r(fn)'"
 	quietly mata: mata mosave cf_load(), replace
 	quietly mata: mata mosave cf_find(), replace
+	
+	if (`n_cores' > 1) {
 		
-	// Get path to Stata
-	local executable : dir "`c(sysdir_stata)'" files "Stata*-*.exe", respect
-	foreach exe in `executable' {
-		if strpos("`exe'", "old") == 0 {
-			local currentstata_exe `exe'
-		} 
-	}	
-	if (`"`statadir'"' == "") {
-		local statadir `"`c(sysdir_stata)'`currentstata_exe'"'
-	}
-	capture confirm file `"`c(sysdir_stata)'`currentstata_exe'"'
-	if (_rc != 0) {
-		noisily display as error "Automated method to detect Stata directory failed."
-		error 498
-	}
-	
-	// Create temporary storage to hold result files
-	capture mkdir temp
-	capture mkdir logs
-	
-	// Create local variables for calulcations below
-	quietly describe using "`dataset'"
-	local numrows = `r(N)'
-	local chunksize = ceil(`numrows' / `n_cores')
-	
-	// Generate local values for first and last row
-	forvalues i = 1 / `n_cores' {
-		
-		// Calculate first and last rows to be included in each chunk
-		local first_row_`i' = (`i' - 1) * `chunksize' + 1
-		local final_row_`i' = min(`first_row_`i'' + `chunksize' - 1, `numrows')
-	}
-	
-	// Divide input file into n temporary subfiles based on number of rows and 
-	// number of cores to use.
-	noisily display "Running codefinder using " `n_cores' " cores..."
-	
-	// Create a new stata process for each chunk; pass necessary arguments
-	quietly findfile "cf_worker.ado"
-	local worker = "`r(fn)'"
-	forvalues i = 1 / `n_cores' {		
-		winexec `statadir' /e /q /i do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
-	}
-	
-	// Initialise local to store job completion status
-	local jobscomplete = 0
-	
-	// Poll file completion log for full job completion every n = 10 seconds
-	while (`jobscomplete' != 1) {
-		
-		// Poll for completion
-		sleep 250
-				
-		// When all jobs are finished, exit loop (pausing to allow residual file writing)
-		capture confirm file "temp/run_complete.dta"
-		if (_rc == 0) {
-			local jobscomplete = 1
+		// Get path to Stata
+		local executable : dir "`c(sysdir_stata)'" files "Stata*-*.exe", respect
+		foreach exe in `executable' {
+			if strpos("`exe'", "old") == 0 {
+				local currentstata_exe `exe'
+			} 
+		}	
+		if (`"`statadir'"' == "") {
+			local statadir `"`c(sysdir_stata)'`currentstata_exe'"'
 		}
-	}
+		capture confirm file `"`c(sysdir_stata)'`currentstata_exe'"'
+		if (_rc != 0) {
+			noisily display as error "Automated method to detect Stata directory failed."
+			error 498
+		}
+		
+		// Create temporary storage to hold result files
+		capture mkdir temp
+		capture mkdir logs
+		
+		// Create local variables for calulcations below
+		quietly describe using "`dataset'"
+		local numrows = `r(N)'
+		local chunksize = ceil(`numrows' / `n_cores')
+		
+		// Generate local values for first and last row
+		forvalues i = 1 / `n_cores' {
 			
-	// Append results files together
-	if (`n_cores' == 1) {
-		use "temp\chunk_1_results.dta", clear
-	}
+			// Calculate first and last rows to be included in each chunk
+			local first_row_`i' = (`i' - 1) * `chunksize' + 1
+			local final_row_`i' = min(`first_row_`i'' + `chunksize' - 1, `numrows')
+		}
+		
+		// Divide input file into n temporary subfiles based on number of rows and 
+		// number of cores to use.
+		noisily display "Running codefinder using " `n_cores' " cores..."
+		
+		// Create a new stata process for each chunk; pass necessary arguments
+		quietly findfile "cf_worker.ado"
+		local worker = "`r(fn)'"
+		forvalues i = 1 / `n_cores' {		
+			winexec `statadir' /e /q /i do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
+		}
+		
+		// Initialise local to store job completion status
+		local jobscomplete = 0
+		
+		// Poll file completion log for full job completion every n = 10 seconds
+		while (`jobscomplete' != 1) {
+			
+			// Poll for completion
+			sleep 250
+					
+			// When all jobs are finished, exit loop (pausing to allow residual file writing)
+			capture confirm file "temp/run_complete.dta"
+			if (_rc == 0) {
+				local jobscomplete = 1
+			}
+		}
+				
+		// Append results files together
+		if (`n_cores' == 1) {
+			use "temp\chunk_1_results.dta", clear
+		}
+		else {
+			local chunks : dir temp files "chunk_*_results.dta"
+			quietly cd temp
+			append using `chunks'
+			quietly cd ../
+		}
+		
+		// Delete temporary directory at completion of code
+		shell rd "temp" /s /q
+		shell rd "logs" /s /q
+				
+	} // End of multiprocessing
 	else {
-		local chunks : dir temp files "chunk_*_results.dta"
-		quietly cd temp
-		append using `chunks'
-		quietly cd ../
+		di "Single core mode"
+		
 	}
 	
-	// Delete temporary directory at completion of code
-	shell rd "temp" /s /q
-	shell rd "logs" /s /q
-	
-	// Delete compiled mata code
+	// Delete compiled mata code files
 	erase "cf_load.mo"
 	erase "cf_find.mo"
 	
