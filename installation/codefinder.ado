@@ -146,28 +146,13 @@ program define codefinder
 			local resultvars = "`resultvars' `varname'"
 		}
 		
-		di "`resultvars'"
+		// Loop over each variable
+		foreach var of varlist `searchvars' {
+			findcodes `var' "`resultvars'" codedef
+		}
 
-// 		// Program to execute search function on nonmissing rows of data for each variable
-// 		capture program drop findcodes
-// 		program define findcodes
-// 			args variable resultvars codedef
-//			
-// 			// Mark observations that are nonmissing
-// 			marksample touse, strok
-// 			markout `touse' `variable', strok
-//			
-// 			// Find conditions
-// 			mata: cf_find("`variable'", "`touse'", "`resultvars'", codedef)
-// 		end
-//
-// 		// Loop over each variable
-// 		foreach var of varlist `searchvars' {
-// 			findcodes `var' "`resultvars'" codedef
-// 		}
-//
-// 		// Keep only ID and result variables; save dataset
-// 		keep `id' `resultvars'
+		// Keep only ID and result variables; save dataset
+		keep `id' `resultvars'
 		
 	} // End of single core processing
 	
@@ -205,5 +190,20 @@ program define codefinder
 	
 	// Reset niceness to default
 	quietly set niceness 5
+	
+end
+
+
+// Program to execute search function on nonmissing rows of data for each variable
+capture program drop findcodes
+program define findcodes
+	args variable resultvars codedef
+			
+	// Mark observations that are nonmissing
+	marksample touse, strok
+	markout `touse' `variable', strok
+			
+	// Find conditions
+	mata: cf_find("`variable'", "`touse'", "`resultvars'", codedef)
 	
 end
