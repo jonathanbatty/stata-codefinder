@@ -118,6 +118,9 @@ program define codefinder
 	} // End of multiprocessing
 	else {
 		
+		// Display message to the screen
+		noisily display "Running codefinder in single core mode..."
+		
 		// Load data chunk
 		use `id' `searchvars' using `dataset'
 
