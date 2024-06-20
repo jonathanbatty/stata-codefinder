@@ -27,6 +27,13 @@ program define codefinder
 		error 498
 	}
 	
+	// Import mata functions and compile these to a local .mo file (which the 
+	// workers can then directly access)
+	quietly findfile "codefinder.mata"
+	run "`r(fn)'"
+	quietly mata: mata mosave cf_load(), replace
+	quietly mata: mata mosave cf_find(), replace
+		
 	// Get path to Stata
 	local executable : dir "`c(sysdir_stata)'" files "Stata*-*.exe", respect
 	foreach exe in `executable' {
@@ -59,13 +66,6 @@ program define codefinder
 		local first_row_`i' = (`i' - 1) * `chunksize' + 1
 		local final_row_`i' = min(`first_row_`i'' + `chunksize' - 1, `numrows')
 	}
-	
-	// Import mata functions and compile these to a local .mo file (which the 
-	// workers can then directly access)
-	quietly findfile "codefinder.mata"
-	run "`r(fn)'"
-	quietly mata: mata mosave cf_load(), replace
-	quietly mata: mata mosave cf_find(), replace
 	
 	// Divide input file into n temporary subfiles based on number of rows and 
 	// number of cores to use.
