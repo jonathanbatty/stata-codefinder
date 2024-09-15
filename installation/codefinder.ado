@@ -132,12 +132,12 @@ program define codefinder
 		// Get contents of each folder and erase file-by-file
 		local tempfiles : dir temp files "*"
 		foreach file of local tempfiles {
-        	erase `file'
+        	erase "temp\\`file'"
 		}
 
 		local logfiles : dir logs files "*"
 		foreach file of local logfiles {
-			erase `file'
+			erase "logs\\`file'"
 		}
 
 		// Delete empty directories
