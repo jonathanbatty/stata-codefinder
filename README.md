@@ -11,7 +11,7 @@
 # Codefinder for Stata
 (v1.00, 14 Jun 2024)
 
-This repository contains the code required to install and run `codefinder`, a package that uses multiprocessing, associative arrays and optimised Mata functions to speed up many-to-many string matching in Stata. This can be used to identify the presence of lists of codes (e.g. ICD, SNOMED-CT, Read, Emis, etc) in variables containing data in string format. At present, `codefinder` has only been tested on Windows (10 and 11).
+This repository contains the code required to install and run `codefinder`, a package that uses multiprocessing, associative arrays and optimised Mata functions to speed up many-to-many string matching in Stata. This can be used to identify the presence of lists of codes (e.g. ICD, SNOMED-CT, Read/CTV3, Emis, etc) in variables containing data in string format. At present, `codefinder` has only been tested on Windows (10 and 11).
 
 ## Installation
 The package can be installed from GitHub using `net install`:
@@ -40,10 +40,6 @@ codefinder dx*, dataset(".\data\patient_data.dta") codefiles("hypertension.txt d
 
 Whereby the variables `dx*` (e.g. dx1, dx2, dx3, ... , dx<sub>n</sub>) present in `patient_data.dta` will be searched for the diagnosis codes (strings) present in `hypertension.txt` and `diabetes.txt` (one code per line in each file). Each row of data should be identified using a unique identifier, id_var. `Codefinder` will run the string matching procedure using 16 CPU cores i this case. It will return a dataset in memory that includes id_var and a variable to indicate the presence of one or more codes from each text file in each initial observation (i.e. `dx*` in this case).
 
-
-## Examples
-Examples of running codefinder using a simulated, synthetic dataset is provided in `./examples/`.
-
 ## Feedback
 Please [open an issue](https://github.com/jonathanbatty/stata-codefinder/issues) to report errors, suggest feature enhancements, and/or make any other requests. 
 
@@ -57,7 +53,7 @@ Please [open an issue](https://github.com/jonathanbatty/stata-codefinder/issues)
 
 
 ## Roadmap
-- Test on Windows / Mac machines.
+- Test on Unix / Mac machines.
 - Improvements in error reporting functionality: workers to flag errors to main Stata instance, which should handle these appropriately.
 - Further incremental improvements to speed and stability.
 
