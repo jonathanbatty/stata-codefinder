@@ -191,13 +191,16 @@ program define codefinder
 	// Delete compiled mata code files
 	erase "cf_load.mo"
 	erase "cf_find.mo"
+
+	// Print confirmation of completion.
+	noisily display as text "Code mapping complete." _newline
 	
 	// Print summary of codefinding if user specifies this
 	if "`summary'" == "summary" {
 		
-		noisily display as result _newline "Summary of code searching:" _newline
-		noisily display as result "{lalign 14:File name}{lalign 20: Variable name}{lalign 35:Number (%) of rows with ≥ 1 code}"
-		noisily display as result "{hline 70}"
+		noisily display as text _newline "Summary of code searching:" _newline
+		noisily display as text "{lalign 14:File name}{lalign 20: Variable name}{lalign 35:Number (%) of rows with ≥ 1 code}"
+		noisily display as text "{hline 70}"
 		
 		local resultvars = subinstr("`codefiles'", ".txt", "", .)
 		local n : word count `resultvars'
@@ -216,7 +219,7 @@ program define codefinder
 			local countpresent = `r(N)'
 			local percentagepresent = (`countpresent' / `numrows') * 100
 			
-			noisily display as result "{lalign 14:`filename'}{lalign 14: `resultvar'}      " %12.0fc `countpresent' " (" %2.1f `percentagepresent' "%)" 
+			noisily display as text "{lalign 14:`filename'}{lalign 14: `resultvar'}      " %12.0fc `countpresent' " (" %2.1f `percentagepresent' "%)" 
 		}
 	}
 	
