@@ -40,7 +40,7 @@ The basic usage is as follows:
 codefinder dx*, dataset(".\data\patient_data.dta") codefiles("hypertension.txt diabetes.txt") id(id_var) n_cores(16)
 ```
 
-Whereby the variables `dx*` (e.g. dx1, dx2, dx3, ... , dx<sub>n</sub>) present in `patient_data.dta` will be searched for the diagnosis codes (strings) present in `hypertension.txt` and `diabetes.txt` (one code per line in each file). Each row of data should be identified using a unique identifier, id_var. `Codefinder` will run the string matching procedure using 16 CPU cores i this case. It will return a dataset in memory that includes id_var and a variable to indicate the presence of one or more codes from each text file in each initial observation (i.e. `dx*` in this case).
+Whereby the variables `dx*` (e.g. dx1, dx2, dx3, ... , dx<sub>n</sub>) present in `patient_data.dta` will be searched for the diagnosis codes (strings) present in `hypertension.txt` and `diabetes.txt` (one code per line in each file). Each row of data should be identified using a unique identifier, id_var. `Codefinder` will run the string matching procedure using 16 CPU cores, in this example. It will return a dataset in memory that includes id_var and a variable to indicate the presence of one or more codes from each text file in each initial observation (i.e. `dx*` in this case).
 
 ## Feedback
 Please [open an issue](https://github.com/jonathanbatty/stata-codefinder/issues) to report errors, suggest feature enhancements, and/or make any other requests. 
