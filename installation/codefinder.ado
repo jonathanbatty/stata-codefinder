@@ -132,17 +132,17 @@ program define codefinder
 		// Get contents of each folder and erase file-by-file
 		local tempfiles : dir temp files "*"
 		foreach file of local tempfiles {
-        	erase "temp\\`file'"
+        	capture erase "temp\\`file'"
 		}
 
 		local logfiles : dir logs files "*"
 		foreach file of local logfiles {
-			erase "logs\\`file'"
+			capture erase "logs\\`file'"
 		}
 
 		// Delete empty directories
-		rmdir temp
-		rmdir logs
+		capture rmdir "temp"
+		capture rmdir "logs"
 				
 	} // End of multiprocessing
 	else {
