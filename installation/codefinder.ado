@@ -102,7 +102,7 @@ program define codefinder
 		// Initialise local to store job completion status
 		local jobscomplete = 0
 		
-		// Poll file completion log for full job completion every n = 10 seconds
+		// Poll file completion log for full job completion every n seconds
 		while (`jobscomplete' != 1) {
 			
 			// Poll for completion
@@ -125,10 +125,24 @@ program define codefinder
 			append using `chunks'
 			quietly cd ../
 		}
-		
-		// Delete temporary directory at completion of code
-		shell rd "temp" /s /q
-		shell rd "logs" /s /q
+
+		// Delete temporary directory at completion of code (using OS-agnostic method)
+
+		// First, ./temp and ./logs folders must both be emptied
+		// Get contents of each folder and erase file-by-file
+		local tempfiles : dir temp files "*"
+		foreach file of local tempfiles {
+        	erase `file'
+		}
+
+		local logfiles : dir logs files "*"
+		foreach file of local logfiles {
+			erase `file'
+		}
+
+		// Delete empty directories
+		rmdir temp
+		rmdir logs
 				
 	} // End of multiprocessing
 	else {
