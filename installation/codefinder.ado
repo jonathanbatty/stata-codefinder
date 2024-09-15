@@ -77,11 +77,26 @@ program define codefinder
 		// number of cores to use.
 		noisily display "Running codefinder using " `n_cores' " cores..."
 		
+		// Evaluate which OS is present and assign appropriate parameters for winexec
+		// /e or -e - set background (batch) mode and log in plain text without prompting when Stata command has completed
+		// /q or -q - suppress logo and initialization messages
+		// /i - suppress Stata application icon in the Windows taskbar
+	
+		if "`c(os)'" == "Windows" {
+			local winexec_opts "/e /q /i"
+		}
+		else if "`c(os)'" == "MacOSX" {
+			local winexec_opts "-e -q"
+		}
+		else if "`c(os)'" == "Unix" {
+			local winexec_opts "-q"
+		}
+		
 		// Create a new stata process for each chunk; pass necessary arguments
 		quietly findfile "cf_worker.ado"
 		local worker = "`r(fn)'"
 		forvalues i = 1 / `n_cores' {		
-			winexec `statadir' /e /q /i do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
+			winexec `statadir' `winexec_opts' do "`worker'" "`i'" "`dataset'" `first_row_`i'' `final_row_`i'' "`searchvars'" "`id'" "`codefiles'" `n_cores'
 		}
 		
 		// Initialise local to store job completion status
